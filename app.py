@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import time
 
 # === CONSTANTES SECTORIELLES ===
 CA_ANNUEL_PAR_POSTE = 74078  # € par salarié/an (source : Cerfrance 2024-2025)
@@ -43,6 +44,15 @@ if "calcul_lance" not in st.session_state:
 
 if st.button("Lancer le calcul des économies"):
     st.session_state.calcul_lance = True
+    # Barre de progression fictive
+    progress = st.progress(0)
+    status = st.empty()
+    for i in range(100):
+        progress.progress(i + 1)
+        if i % 20 == 0:
+            status.text("💸 Calcul des économies en cours... 💸")
+        time.sleep(0.04)  # vitesse de la barre
+    status.text("")  # efface le texte
 
 # === CALCULS UNIQUEMENT SI CLIC ===
 if st.session_state.calcul_lance:
