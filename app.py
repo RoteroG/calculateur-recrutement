@@ -3,13 +3,13 @@ import pandas as pd
 
 # === CONSTANTES SECTORIELLES ===
 CA_ANNUEL_PAR_POSTE = 74078  # € par salarié/an (source : Cerfrance 2024-2025)
-JOURS_TRAVAIL_ETP = 220      # jours travaillés/an par ETP (35h/semaine, congés inclus)
+JOURS_TRAVAIL_ETP = 220      # jours travaillés/an par ETP
 CA_JOUR = CA_ANNUEL_PAR_POSTE / JOURS_TRAVAIL_ETP  # ≈ 337 €/jour/ETP
 
-VACANCE_MOYENNE_SANS = 45    # jours moyens sans agence spécialisée
-VACANCE_AVEC_AGENCE = 10     # jours avec recrutement délégué
-COUT_PRESTATION = 2000       # € (paiement unique par recrutement)
-FIABILITE_BONUS_ZONE_EURO = 1.10  # +10% (moindre turnover zone euro)
+VACANCE_MOYENNE_SANS = 45
+VACANCE_AVEC_AGENCE = 10
+COUT_PRESTATION = 2000
+FIABILITE_BONUS_ZONE_EURO = 1.10
 
 # === CONFIG PAGE ===
 st.set_page_config(page_title="Calculateur économies recrutement", layout="wide")
@@ -24,7 +24,7 @@ st.sidebar.header("Paramètres")
 nb_postes = st.sidebar.number_input("Nombre de postes à pourvoir", min_value=1, step=1, value=1)
 deja_vacant = st.sidebar.number_input("Depuis combien de jours les postes sont déjà vacants", min_value=0, step=1, value=0)
 
-# === AFFICHAGE PARAMÈTRES ===
+# === PARAMÈTRES & SOURCES ===
 st.header("Paramètres utilisés et sources")
 st.markdown(f"""
 - **CA annuel moyen par salarié (ETP)** : {CA_ANNUEL_PAR_POSTE} €  
@@ -37,9 +37,15 @@ st.markdown(f"""
 - **Bonus fiabilité zone euro** : +{int((FIABILITE_BONUS_ZONE_EURO-1)*100)}%
 """)
 
-# === BOUTON POUR LANCER LE CALCUL ===
+# === BOUTON CALCUL ===
+if "calcul_lance" not in st.session_state:
+    st.session_state.calcul_lance = False
+
 if st.button("Lancer le calcul des économies"):
-    # === CALCULS ===
+    st.session_state.calcul_lance = True
+
+# === CALCULS UNIQUEMENT SI CLIC ===
+if st.session_state.calcul_lance:
     vacance_sans = VACANCE_MOYENNE_SANS + deja_vacant
     cout_sans = vacance_sans * CA_JOUR * nb_postes
 
@@ -51,3 +57,32 @@ if st.button("Lancer le calcul des économies"):
 
     # === AFFICHAGE DES RÉSULTATS ===
     st.header("Résultats")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.subheader("Sans agence spécialisée")
+        st.metric("Durée vacance", f"{vacance_sans} jours")
+        st.metric("Perte estimée", f"{cout_sans:,.0f} €")
+
+    with col2:
+        st.subheader("Avec recrutement délégué")
+        st.metric("Durée vacance", f"{VACANCE_AVEC_AGENCE} jours")
+        st.metric("Coût total (vacance + prestation)", f"{cout_avec_total:,.0f} €")
+
+    st.success(f"Économie nette réalisée : {economies:,.0f} €")
+    st.info(f"Équivalent à {jours_ca_sauves:,.0f} jours de chiffre d’affaires sauvés")
+
+    # Comparatif prestation vs économies
+    st.subheader("Analyse du rapport coût / gain")
+    st.write(f"- **Coût de la prestation** : {COUT_PRESTATION * nb_postes:,.0f} €")
+    st.write(f"- **Économies générées grâce à cette prestation** : {economies:,.0f} €")
+    st.write(f"- Chaque euro investi dans la prestation génère environ "
+             f"**{economies / (COUT_PRESTATION * nb_postes):.1f} €** d’économies nettes.")
+
+    # === CHART COMPARATIF ===
+    data = pd.DataFrame({
+        "Scénario": ["Sans agence spécialisée", "Avec recrutement délégué"],
+        "Montant (€)": [cout_sans, cout_avec_total]
+    })
+    st.bar_chart(data.set_index("Scénario"))
