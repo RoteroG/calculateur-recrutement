@@ -44,15 +44,33 @@ if "calcul_lance" not in st.session_state:
 
 if st.button("Lancer le calcul des économies"):
     st.session_state.calcul_lance = True
-    # Barre de progression fictive
+
+    # Messages marketing affichés pendant la progression
+    messages = [
+        "🔍 Analyse des pertes actuelles...",
+        "📊 Estimation du chiffre d'affaires perdu...",
+        "🛠️ Application de notre solution de recrutement...",
+        "💸 Calcul des économies réalisées...",
+        "✅ Résultats prêts !"
+    ]
+
+    # Barre de progression
     progress = st.progress(0)
     status = st.empty()
+
+    # Boucle avec progression + messages
     for i in range(100):
         progress.progress(i + 1)
-        if i % 20 == 0:
-            status.text("💸 Calcul des économies en cours... 💸")
-        time.sleep(0.04)  # vitesse de la barre
-    status.text("")  # efface le texte
+
+        # Changement de message tous les 20%
+        if i % 20 == 0 and i // 20 < len(messages):
+            status.text(messages[i // 20])
+
+        time.sleep(0.06)  # durée totale ~3s
+
+    # Nettoyage du message
+    status.text("")
+
 
 # === CALCULS UNIQUEMENT SI CLIC ===
 if st.session_state.calcul_lance:
